@@ -175,9 +175,9 @@
 
     async function exitVR() {
       console.log('退出VR模式')
+      gl.viewport(0, 0, _W, _H);
       // xrSession = await XRSystem.requestSession('inline');
       space = await xrSession.requestReferenceSpace('viewer');
-      xrSession.updateRenderState({ baseLayer: new XRWebGLLayer(xrSession, gl) });
       isImmersive = false;
       xrSession.cancelAnimationFrame(xrAniId);
       window.requestAnimationFrame(tick)
