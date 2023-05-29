@@ -29,7 +29,8 @@
       const isSessionSupportedInline = await XRSystem.isSessionSupported('inline');
       const isSessionSupportedVR = await XRSystem.isSessionSupported('immersive-vr');
       const isSessionSupportedAR = await XRSystem.isSessionSupported('immersive-ar');
-      xrSession = await XRSystem.requestSession('immersive-vr');
+      // xrSession = await XRSystem.requestSession('immersive-vr');
+      xrSession = await XRSystem.requestSession('inline');
       alert(xrSession)
     } catch (e) {
       alert(e)
