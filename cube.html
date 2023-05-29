@@ -153,73 +153,75 @@
     gl.enable(gl.DEPTH_TEST); // 开启深度测试
     gl.drawElements(gl.TRIANGLES, index.length, gl.UNSIGNED_BYTE, 0);
 
+    try {
 
+   
     // VR
     const XRSystem = navigator.xr;
-    let xrSession, space, aniId;
-    try {
-      
+    let xrSession, space, winAniId, xrAniId, isImmersive = false;
     const btn = document.querySelector('.btn')
     btn.addEventListener('click', enterVR, false)
-    xrSession = await XRSystem.requestSession('immersive-vr');
-    
-    xrSession.updateRenderState({ baseLayer: new XRWebGLLayer(xrSession, gl) });
-    xrSession.addEventListener('inputsourcechange', e => {
-      console.log('xrSession.oninputsourceschange', e)
-      const { added } = e;
-      console.log(`新增的设备:`, added)
-      state.xrInputSources = added;
-    })
-    } catch(e) {
-      alert(e)
-    }
-
-    async function handleVR() {
-      space = await xrSession.requestReferenceSpace('viewer');
-      xrSession.isImmersive = false;
-    }
 
     async function enterVR() {
       console.log('进入VR模式')
+      xrSession = await XRSystem.requestSession('immersive-vr');
+      xrSession.updateRenderState({ baseLayer: new XRWebGLLayer(xrSession, gl) });
       space = await xrSession.requestReferenceSpace('local');
-      xrSession.isImmersive = true;
-      setTimeout(exitVR, 5 * 1000)
+      isImmersive = true;
+      window.cancelAnimationFrame(winAniId);
+      xrSession.requestAnimationFrame(tick)
+      setTimeout(exitVR, 2 * 1000)
     }
 
     async function exitVR() {
       console.log('退出VR模式')
+      // xrSession = await XRSystem.requestSession('inline');
       space = await xrSession.requestReferenceSpace('viewer');
-      xrSession.isImmersive = false;
-      xrSession.cancelAnimationFrame(aniId)
+      xrSession.updateRenderState({ baseLayer: new XRWebGLLayer(xrSession, gl) });
+      isImmersive = false;
+      xrSession.cancelAnimationFrame(xrAniId);
+      window.requestAnimationFrame(tick)
     }
 
-    handleVR();
     tick()
 
+    function rotate() {
+      // 视图旋转
+      mat4.rotate(viewMatrix, viewMatrix, 1 * Math.PI / 180, [0.0, 1.0, 0.0]);
+      gl.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.drawElements(gl.TRIANGLES, index.length, gl.UNSIGNED_BYTE, 0);
+    }
+
     function tick(time, frame) {
-      console.log(time)
-      aniId = xrSession.requestAnimationFrame(tick);
-      document.querySelector('.debug').innerHTML = (time || 0).toString();
-      // const session = frame.session;
-      // const pose = frame.getViewerPose(space)
-      // if (pose) {
-      //   let glLayer = session.renderState.baseLayer;
-      //   gl.bindFramebuffer(gl.FRAMEBUFFER, glLayer.framebuffer);
-      //   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      console.log(time, frame)
+      if (!isImmersive) {
+        winAniId = window.requestAnimationFrame(tick);
+        document.querySelector('.debug').innerHTML = (time || 0).toString();
+        rotate();
+        return
+      }
+      
+      xrAniId = xrSession.requestAnimationFrame(tick);
+      if (!frame) return;
+      const session = frame.session;
+      const pose = frame.getViewerPose(space)
+      if (pose) {
+        let glLayer = session.renderState.baseLayer;
+        gl.bindFramebuffer(gl.FRAMEBUFFER, glLayer.framebuffer);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-      //   for (let view of pose.views) {
-      //     let viewport = glLayer.getViewport(view);
-      //     gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
-
-      //     // 视图旋转
-      //     mat4.rotate(viewMatrix, viewMatrix, 1 * Math.PI / 180, [0.0, 1.0, 0.0]);
-      //     gl.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix);
-      //     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-      //     gl.drawElements(gl.TRIANGLES, index.length, gl.UNSIGNED_BYTE, 0);
-      //   }
-      // }
+        for (let view of pose.views) {
+          let viewport = glLayer.getViewport(view);
+          gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+          rotate()
+        }
+      }
 
     }
+  } catch(e) {
+    console.log(e)
+  }
 
   </script>
 </body>
