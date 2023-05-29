@@ -1,0 +1,14 @@
+lockfileVersion: '6.0'
+
+dependencies:
+  gl-matrix:
+    specifier: ^3.4.3
+    version: registry.npmmirror.com/gl-matrix@3.4.3
+
+packages:
+
+  registry.npmmirror.com/gl-matrix@3.4.3:
+    resolution: {integrity: sha512-wcCp8vu8FT22BnvKVPjXa/ICBWRq/zjFfdofZy1WSpQZpphblv12/bOQLBC1rMM7SGOFS9ltVmKOHil5+Ml7gA==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/gl-matrix/-/gl-matrix-3.4.3.tgz}
+    name: gl-matrix
+    version: 3.4.3
+    dev: false

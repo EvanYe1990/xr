@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    body {
+      width: 100%;
+      height: 100vh;
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
+      color: #fff;
+      background-color: #000;
+    }
+
+    .btn {
+      width: 100px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+    }
+  </style>
+  <!-- <script src="libs/gl-matrix-min.js"></script> -->
+</head>
+
+<body>
+  <div class="mode"></div>
+  <!-- <div class="btn">进入XR</div> -->
+  <script type="module">
+    import { mat4 } from '/node_modules/gl-matrix/esm/index.js';
+    let xrSession, gl;
+    // 检查用户的设备和浏览器是否支持 WebXR 体验模式
+    // inline 渲染画面到页面上，就和使用普通 WebGL 渲染是一样的，浏览器应该支持该模式
+    // immersive-vr 渲染到 VR 设备
+    // immersive-ar 渲染到 AR 设备
+    const XRSystem = navigator.xr;
+    const isSessionSupportedInline = await XRSystem.isSessionSupported('inline');
+    const isSessionSupportedVR = await XRSystem.isSessionSupported('immersive-vr');
+    const isSessionSupportedAR = await XRSystem.isSessionSupported('immersive-ar');
+    if (isSessionSupportedVR) {
+      const btn = document.createElement('div')
+      btn.innerHTML = '进入XR'
+      btn.className = 'btn'
+      btn.addEventListener('click', handleXrSession, false)
+      document.body.append(btn)
+    }
+    console.log(isSessionSupportedInline, isSessionSupportedVR, isSessionSupportedAR)
+    document.querySelector('.mode').innerHTML = `inline ${isSessionSupportedInline} vr: ${isSessionSupportedVR} ar: ${isSessionSupportedAR}`
+
+    // 开启 WebXR 体验模式
+    // 请求创建 XRSession 并进入指定模式的会话
+    let refSpace, eyeLoc, martixLoc;
+    const oninputsourceschange = (e) => {
+      // 摄入设备列表，例如 VR 手柄。当输入设备发生变化时会触发
+      console.log('xrSession.oninputsourceschange', e)
+      const { added } = e;
+      console.log(`新增的设备:`, added)
+    }
+    const onselectstart = () => {
+      console.log(`xrSession.onselectstart`)
+    }
+    const onselect = () => {
+      console.log(`xrSession.onselect`)
+    }
+    const onselectend = () => {
+      console.log(`xrSession.onselectend`)
+    }
+    const onsqueeze = () => {
+      console.log('onsqueeze')
+    }
+    const onsqueezestart = () => {
+      console.log('onsqueezestart')
+    }
+    const onsqueezeend = () => {
+      console.log('onsqueezeend')
+    }
+    const onvisibilitychange = () => {
+      console.log('onvisibilitychange')
+    }
+    const onframeratechange = () => {
+      console.log('onframeratechange')
+    }
+    const onblur = () => {
+      console.log(`xrSession.onblur`)
+    }
+    const onend = () => {
+      console.log(`xrSession.onend`)
+    }
+
+    async function handleXrSession() {
+      xrSession = await XRSystem.requestSession('immersive-vr');
+      const { depthFar: far, depthNear: near } = xrSession.renderState
+      console.log(`开启XR功能: 渲染空间 => near: ${near}, far: ${far}`, xrSession)
+      const canvas = document.createElement('canvas');
+      gl = canvas.getContext('webgl', { xrCompatible: true, alias: true, depth: false, antialias: true });
+
+      xrSession.updateRenderState({ baseLayer: new XRWebGLLayer(xrSession, gl) });
+
+      // 请求 local 空间，我们只需要跟踪用户头部旋转
+      refSpace = await xrSession.requestReferenceSpace('local')
+      xrSession.oninputsourceschange = oninputsourceschange
+      xrSession.requestAnimationFrame(tick)
+    }
+
+    function tick(time, frame) {
+      const session = frame.session;
+      xrSession.requestAnimationFrame(tick);
+    }
+  </script>
+</body>
+
+</html>
